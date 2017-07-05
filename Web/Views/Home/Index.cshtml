@@ -28,14 +28,10 @@
                         <td>@process.Status</td>
                         <td>@process.Started.ToString("s") (@DateTimeFormatter.TimeAgo(process.Started))</td>
                         <td>
-                            <ul>
                                 @foreach (var param in process.Parameters)
                                 {
-                                    <li>
                                         <pre>@param.Key: @param.Value</pre>
-                                    </li>
                                 }
-                            </ul>
                         </td>
                         <td>
                             <pre>@process.FullLog</pre>
@@ -120,14 +116,10 @@
                         {
                             <td>@lastProcess.Completed.ToString("s")  (@DateTimeFormatter.TimeAgo(lastProcess.Completed))</td>
                             <td>
-                                <ul>
                                     @foreach (var param in lastProcess.Parameters)
                                     {
-                                        <li>
-                                            <pre>@param.Key: @param.Value</pre>
-                                        </li>
+                                       <pre>@param.Key: @param.Value</pre>
                                     }
-                                </ul>
                             </td>
                             <td>
                                 <pre>@((lastProcess.Succeeded ? "OK" : "ERROR: " + lastProcess.Exception.Message) + (lastProcess is SmokeTest ? "\n(smoke tested)" : ""))</pre>
@@ -175,14 +167,10 @@
                         <td>@process.Status</td>
                         <td>@process.Completed.ToString("s") (@DateTimeFormatter.TimeAgo(process.Completed))</td>
                         <td>
-                            <ul>
                                 @foreach (var param in process.Parameters)
                                 {
-                                    <li>
-                                        <pre>@param.Key: @param.Value</pre>
-                                    </li>
+                                    <pre>@param.Key: @param.Value</pre>
                                 }
-                            </ul>
                         </td>
                         <td>
                             <pre>@(process.Succeeded ? "OK" : "ERROR: " + process.Exception.Message)</pre>
@@ -195,49 +183,56 @@
             </tbody>
         </table>
     }
-    <br />
-    <br />
     <hr />
-    <br />
+    <style>
+      .indented {
+         padding-left: 18pt;
+      }
+    </style>
+
     <h2>Instructions</h2>
     <div class="instructions">
 
-        <div>
             1. Clone your website:
         <pre><code>
     cd c:\InetPub\wwwrooot
     git clone &lt;url&gt; MyWebSite
 </code></pre>
-            (and publish it on IIS)
-        </div>
-        <div>
+            <p class="indented">(and publish it on IIS)</p>
             2. On your web.config:
         <pre><code>
     &lt;!-- allow deployments to be requested from localhost, and from github webhook servers --&gt;
     &lt;gitDeployHub allowedAddresses="192.168.*.*;127.0.0.1;::1; 207.97.227.253, 50.57.128.197, 108.171.174.178, 50.57.231.61, 54.235.183.49, 54.235.183.23, 54.235.118.251, 54.235.120.57, 54.235.120.61, 54.235.120.62"&gt;
         &lt;instances&gt;
             &lt;!-- folder is optional if location is ~\..\..\&lt;name&gt; --&gt;
-            &lt;instance name="MyWebsite" folder="c:\InetPub\wwwroot\Path\To\MyWebsite" treeish="tagOrBranchNameToCheckout" /&gt;
-            &lt;instance name="AnotherWebsite" /&gt;
+            &lt;instance name="MyWebsite" folder="c:\InetPub\wwwroot\Path\To\MyWebsite" projectFolder="subfolder of folder where project-specific scripts may be placed"/&gt;
+            &lt;instance name="LANSA example" folder="C:\Program Files (x86)\LANSA\Online Shopping" projectFolder="X_Win95\X_Lansa\X_Apps\SHOP"/&gt;
         &lt;/instances&gt;
     &lt;/gitDeployHub&gt;
 </code></pre>
-        </div>
-        <div>
             3. Setup your hook to send an http POST to:<br />
             <pre>
     /api/deployments/instance-name?source=source-name
 </pre>
-            For example, if you want to pull from a github repo go to Settings / Service Hooks / WebHook URLs,<br />
-            and add:
+            <p class="indented">For example, if you want to pull from a github repo go to Settings / Service Hooks / WebHook URLs,<br />
+            and add:</p>
             <pre>
     @Url.Action("Start", "Deployment", new { id = "MyWebsite", source = "github" }, "http")
 </pre>
-            (you can use query parameters to keep track of the request source)
-        </div>
-        <div>
-            4. Ready! (Push and refresh this page until see the deployment)
-        </div>
+            <p class="indented">(you can use query parameters to keep track of the request source)</p>
+
+            4. Script configuration<br />
+           <p class="indented">Scripts are located firstly in the <code>&lt;folder&gt;\&lt;project&gt;\autodeploy</code> folder<br /> 
+           and then in the <code>&lt;folder&gt;\autodeploy</code> folder<br /><br />
+       
+           There are three script files:<br />
+           <code>PreDeploy.ps1<br />
+                  PostDeploy.ps1<br />
+                  SmokeTest.ps1<br /></code>
+           Note that there was a treeish configuration option for setting the git branch to use. Now the git branch is presumed to be the current branch. If it needs to be otherwise, change the branch in predeploy.ps1</p>
+
+            5. Ready! (Push and refresh this page until see the deployment)<br />
+           <p class="indented">Log messages may also be found in deployments.log in root of web site</p>
     </div>
 
     <script>

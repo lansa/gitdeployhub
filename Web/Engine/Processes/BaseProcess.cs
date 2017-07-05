@@ -92,8 +92,6 @@ namespace GitDeployHub.Web.Engine.Processes
                     throw new Exception("Cannot execute a process already in status: " + Status);
                 }
                 Log(string.Format("Started ({0})", Started.ToString("s")));
-                Log(string.Format("Instance: {0}", Instance.Name));
-                LogNewLine();
                 Status = ProcessStatus.InProgress;
 
                 DoExecute();

@@ -13,9 +13,9 @@ namespace GitDeployHub.Web.Engine.Processes
 
         protected override void DoExecute()
         {
+            Log("Smoke Testing " + Instance.Name);
             Instance.ExecuteSmokeTest(this);
-            LogNewLine();
-            Log("Instance Smoke Tested: " + Instance.Name);
+            Log("Instance Smoke Tested " + Instance.Name);
             Instance.LastSmokeTest = this;
         }
     }
