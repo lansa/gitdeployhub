@@ -22,8 +22,12 @@ namespace GitDeployHub.Web.Controllers
 
             parameters["Address"] = httpRequest.UserHostAddress;
             parameters["UserAgent"] = httpRequest.UserAgent;
+          
+            // Looking for AppPool Identity in order to assist with configuration.
+            var appPoolIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            parameters["UserID"] = appPoolIdentity != null ? appPoolIdentity.Name : "Unknown --your config needs fixing";
 
-            var instance = Hub.Instance.GetInstance(id);
+         var instance = Hub.Instance.GetInstance(id);
             var deployment = instance.CreateDeployment(parameters);
             if (!deployment.IsAllowed(HttpContext))
             {
@@ -46,7 +50,12 @@ namespace GitDeployHub.Web.Controllers
             parameters["Address"] = httpRequest.UserHostAddress;
             parameters["UserAgent"] = httpRequest.UserAgent;
 
-            var instance = Hub.Instance.GetInstance(id);
+            // Looking for AppPool Identity in order to assist with configuration.
+            var appPoolIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            parameters["UserID"] = appPoolIdentity != null ? appPoolIdentity.Name : "Unknown --your config needs fixing";
+
+
+         var instance = Hub.Instance.GetInstance(id);
             var smokeTest = instance.CreateSmokeTest(parameters);
             if (!smokeTest.IsAllowed(HttpContext))
             {
