@@ -13,15 +13,22 @@ namespace GitDeployHub.Web.Engine.Processes
 
         protected override void DoExecute()
         {
-            base.DoExecute();
-            if (Instance.FilesChangedToTreeish.Length > 0)
+            Log("Deploying " + Instance.Name);
+
+            // Parameters may be referenced here like this: Log("User ID: " + Parameters["UserID"] );
+
+            // Doing a Fetch and a Pull causes 2 connections to the origin to be made. This is far slower than the rest of the 
+            // processing, and is a special case anyway, as this task will usually be caused by a commit to origin
+            // base.DoExecute();
+            //if (Instance.FilesChangedToTreeish.Length > 0)
+            if ( true )
             {
                 if (!Dry)
                 {
                     Instance.ExecutePreDeploy(this);
-                    Instance.Checkout(Instance.Treeish, this);
+                    Instance.ResetHard(this);         // Clean out all local changes from the directory, there should be none and the 1st install via MSI leaves files in the Package Directory, of course
+                    Instance.Pull(this);             
                     Instance.ExecutePostDeploy(this);
-                    LogNewLine();
                     Log("Instance Deployed: " + Instance.Name);
                     Instance.LastDeployment = this;
                 }
@@ -30,6 +37,7 @@ namespace GitDeployHub.Web.Engine.Processes
             {
                 Skipped = true;
                 Log("Skipping deployment.");
+                LogNewLine();
             }
         }
 

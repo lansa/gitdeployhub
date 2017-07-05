@@ -31,7 +31,7 @@ namespace GitDeployHub.Web.Engine
         {
             foreach (var instanceConfig in Config.GitDeployHub.Settings.Instances.OfType<InstanceElement>())
             {
-                var instance = new Instance(this, instanceConfig.Name, instanceConfig.Treeish, instanceConfig.Folder);
+                var instance = new Instance(this, instanceConfig.Name, instanceConfig.Treeish, instanceConfig.Folder, instanceConfig.ProjectFolder);
                 if (!string.IsNullOrWhiteSpace(instanceConfig.EnvironmentVariables))
                 {
                     foreach (var pair in instanceConfig.EnvironmentVariables

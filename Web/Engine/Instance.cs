@@ -21,6 +21,8 @@ namespace GitDeployHub.Web.Engine
 
         public string Treeish { get; set; }
 
+        public string ProjectFolder { get; set; }
+
         private static string _mappedApplicationPath;
 
         public static string MappedApplicationPath
@@ -203,7 +205,11 @@ namespace GitDeployHub.Web.Engine
             {
                 if (_hasSmokeTest == null)
                 {
-                    _hasSmokeTest = HasFile("BuildScripts\\SmokeTest.ps1");
+                    _hasSmokeTest = HasFile(Path.Combine(ProjectFolder, "autodeploy\\SmokeTest.ps1") );
+                }
+                if ( _hasSmokeTest == false)
+                {
+                    _hasSmokeTest = HasFile("autodeploy\\SmokeTest.ps1");
                 }
                 return _hasSmokeTest ?? false;
             }
@@ -211,13 +217,14 @@ namespace GitDeployHub.Web.Engine
 
         public Notifier[] Notifiers { get; set; }
 
-        public Instance(Hub hub, string name, string treeish = null, string folder = null)
+        public Instance(Hub hub, string name, string treeish = null, string folder = null, string projectFolder = null)
         {
             Hub = hub;
             Name = name;
             Treeish = treeish;
             Folder = folder;
             EnvironmentVariables = new Dictionary<string, string>();
+            ProjectFolder = projectFolder;
             if (string.IsNullOrWhiteSpace(Folder))
             {
                 if (Name == "_self")
@@ -268,8 +275,9 @@ namespace GitDeployHub.Web.Engine
         {
             if (echo)
             {
+                log.Log(string.Format("   Working Directory: {0}", Folder));
                 log.Log(string.Format(" & {0} {1}", command, arguments ?? ""));
-            }
+         }
             var processStartInfo = new ProcessStartInfo(command)
                 {
                     UseShellExecute = false,
@@ -360,6 +368,14 @@ namespace GitDeployHub.Web.Engine
             FolderChanged();
         }
 
+        // Clear out any changes in the working directory
+        public void ResetHard(ILog log)
+        {
+           ExecuteProcess("git", "clean -fd", log);           // Remove untracked files
+           ExecuteProcess("git", "reset --hard HEAD", log);   // Set all changes back to the current HEAD.
+           FolderChanged();
+        }
+
         public void Stash(ILog log)
         {
             ExecuteProcess("git", "stash", log);
@@ -391,22 +407,42 @@ namespace GitDeployHub.Web.Engine
             ExecuteProcess(command, arguments, log);
         }
 
+        public void ExecuteScriptIfExists(string fileName, string command, string arguments, ILog log)
+        {
+            var commonFilename = fileName;
+
+            // Execute a project-specific script, if it exists
+            var projectFileName = Path.Combine(ProjectFolder, commonFilename);
+            if (HasFile(projectFileName))
+            {
+               log.Log("Project-specific script file");
+               ExecuteProcess("powershell", projectFileName, log);
+            }
+            else
+            {
+                log.Log(string.Format("({0} not present)", projectFileName));
+
+                // Execute a common script, if it exists
+                ExecuteIfExists(commonFilename, "powershell", commonFilename, log);
+            }            
+        }
+
         public void ExecutePreDeploy(ILog log)
         {
-            var fileName = "BuildScripts\\PreDeploy.ps1";
-            ExecuteIfExists(fileName, "powershell", fileName, log);
-        }
+            var filename = "autodeploy\\PreDeploy.ps1";
+            ExecuteScriptIfExists(filename, "powershell", filename, log);
+        }            
 
         public void ExecutePostDeploy(ILog log)
         {
-            var fileName = "BuildScripts\\PostDeploy.ps1";
-            ExecuteIfExists(fileName, "powershell", fileName, log);
+            var fileName = "autodeploy\\PostDeploy.ps1";
+            ExecuteScriptIfExists(fileName, "powershell", fileName, log);
         }
 
         public void ExecuteSmokeTest(ILog log)
         {
-            var fileName = "BuildScripts\\SmokeTest.ps1";
-            ExecuteIfExists(fileName, "powershell", fileName, log);
+            var fileName = "autodeploy\\SmokeTest.ps1";
+            ExecuteScriptIfExists(fileName, "powershell", fileName, log);
         }
 
         internal void Log(string message, BaseProcess process)

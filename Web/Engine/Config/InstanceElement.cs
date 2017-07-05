@@ -36,6 +36,13 @@ namespace GitDeployHub.Web.Engine.Config
             set { this["environmentVariables"] = value; }
         }
 
+        [ConfigurationProperty("projectFolder")]
+        public string ProjectFolder
+      {
+            get { return this["projectFolder"] as string; }
+            set { this["projectFolder"] = value; }
+        }
+
         [ConfigurationProperty("notifiers")]
         public NotifierCollection Notifiers
         {
