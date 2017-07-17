@@ -193,20 +193,20 @@
     <h2>Instructions</h2>
     <div class="instructions">
 
-            1. Clone your website:
+            1. Clone your website or install your application environment using an MSI:
         <pre><code>
     cd c:\InetPub\wwwrooot
     git clone &lt;url&gt; MyWebSite
 </code></pre>
             <p class="indented">(and publish it on IIS)</p>
-            2. On your web.config:
+            2. In your web.config file in C:\inetpub\wwwroot\gitdeployhub\Web:
         <pre><code>
     &lt;!-- allow deployments to be requested from localhost, and from github webhook servers --&gt;
     &lt;gitDeployHub allowedAddresses="192.168.*.*;127.0.0.1;::1; 207.97.227.253, 50.57.128.197, 108.171.174.178, 50.57.231.61, 54.235.183.49, 54.235.183.23, 54.235.118.251, 54.235.120.57, 54.235.120.61, 54.235.120.62"&gt;
         &lt;instances&gt;
             &lt;!-- folder is optional if location is ~\..\..\&lt;name&gt; --&gt;
             &lt;instance name="MyWebsite" folder="c:\InetPub\wwwroot\Path\To\MyWebsite" projectFolder="subfolder of folder where project-specific scripts may be placed"/&gt;
-            &lt;instance name="LANSA example" folder="C:\Program Files (x86)\LANSA\Online Shopping" projectFolder="X_Win95\X_Lansa\X_Apps\SHOP"/&gt;
+            &lt;instance name="LANSA example" folder="C:\Program Files (x86)\LANSA\1-Click Deployment" projectFolder="X_Win95\X_Lansa\X_Apps\DEMO"/&gt;
         &lt;/instances&gt;
     &lt;/gitDeployHub&gt;
 </code></pre>
@@ -231,7 +231,7 @@
                   SmokeTest.ps1<br /></code>
            Note that there was a treeish configuration option for setting the git branch to use. Now the git branch is presumed to be the current branch. If it needs to be otherwise, change the branch in predeploy.ps1</p>
 
-            5. Ready! (Push and refresh this page until see the deployment)<br />
+            5. Ready! (Push and refresh this page until you see the deployment result)<br />
            <p class="indented">Log messages may also be found in deployments.log in root of web site</p>
     </div>
 
