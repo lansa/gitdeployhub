@@ -368,10 +368,9 @@ namespace GitDeployHub.Web.Engine
             FolderChanged();
         }
 
-        // Clear out any changes in the working directory
+        // Clear out any changes in the working directory so that the pull will always succeed
         public void ResetHard(ILog log)
         {
-           ExecuteProcess("git", "clean -fd", log);           // Remove untracked files
            ExecuteProcess("git", "reset --hard HEAD", log);   // Set all changes back to the current HEAD.
            FolderChanged();
         }
