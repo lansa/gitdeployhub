@@ -35,7 +35,7 @@ namespace GitDeployHub.Web.Controllers
             }
             deployment.Dry = dry;
             deployment.ExecuteAsync();
-            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
+            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : Content("Successfully deployed");
         }
 
         // POST /deployment/smoketest/instance-name
@@ -62,7 +62,7 @@ namespace GitDeployHub.Web.Controllers
                 throw new HttpException(403, "Not Allowed");
             }
             smokeTest.ExecuteAsync();
-            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
+            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : Content("Successfully smoke tested");
         }
     }
 }

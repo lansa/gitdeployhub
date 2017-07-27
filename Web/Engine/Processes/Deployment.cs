@@ -23,7 +23,7 @@ namespace GitDeployHub.Web.Engine.Processes
             {
                Instance.ExecutePreDeploy(this);
                Instance.ResetHard(this);         // Clean out all local changes from the directory, there should be none and the 1st install via MSI leaves files in the Package Directory, of course
-               Instance.Pull(this);             
+               // Instance.Pull(this);           // Not required as reset to origin's state which is same as a pull
                Instance.ExecutePostDeploy(this);
                Log("Instance Deployed: " + Instance.Name);
                Instance.LastDeployment = this;

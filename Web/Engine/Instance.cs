@@ -277,7 +277,7 @@ namespace GitDeployHub.Web.Engine
             {
                 log.Log(string.Format("   Working Directory: {0}", Folder));
                 log.Log(string.Format(" & {0} {1}", command, arguments ?? ""));
-         }
+            }
             var processStartInfo = new ProcessStartInfo(command)
                 {
                     UseShellExecute = false,
@@ -371,8 +371,19 @@ namespace GitDeployHub.Web.Engine
         // Clear out any changes in the working directory so that the pull will always succeed
         public void ResetHard(ILog log)
         {
-           ExecuteProcess("git", "reset --hard HEAD", log);   // Set all changes back to the current HEAD.
-           FolderChanged();
+            if (ProjectFolder.Length != 0)
+            {
+               ExecuteProcess("git", "clean -fd -- " + ProjectFolder + "\\", log); // Ensure there are no changes from the initial install in the project folder
+            }
+
+            // Must fetch the origin here so we can reset to the origin!
+            Fetch(log);
+
+            // Set all changes back to the origin's HEAD. Ensures that a force push to the origin also resets this repo to the exact same state
+            // The git rev-parse obtains the current upstream as in refs/remotes/origin/master, if its the master branch.
+            // Then the current branch is reset to the upstream branch
+            ExecuteProcess("powershell", " $result = git rev-parse --symbolic-full-name '@{upstream}';$result; &'git' reset --hard $result", log);   
+            FolderChanged();
         }
 
         public void Stash(ILog log)
