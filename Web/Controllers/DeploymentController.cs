@@ -27,7 +27,7 @@ namespace GitDeployHub.Web.Controllers
             var appPoolIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
             parameters["UserID"] = appPoolIdentity != null ? appPoolIdentity.Name : "Unknown --your config needs fixing";
 
-         var instance = Hub.Instance.GetInstance(id);
+            var instance = Hub.Instance.GetInstance(id);
             var deployment = instance.CreateDeployment(parameters);
             if (!deployment.IsAllowed(HttpContext))
             {
@@ -36,6 +36,33 @@ namespace GitDeployHub.Web.Controllers
             deployment.Dry = dry;
             deployment.ExecuteAsync();
             return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : Content("Successfully deployed");
+        }
+
+        // POST /deployment/manual/instance-name
+        [AcceptVerbs("POST", "PUT")]
+        public ActionResult Manual(string id, string source = null, bool dry = false)
+        {
+            var httpRequest = HttpContext.Request;
+            var parameters = Request.QueryString.Cast<string>()
+                .Select(name => new { Name = name, Value = Request.QueryString[name] })
+                .ToDictionary(p => p.Name, p => p.Value);
+
+            parameters["Address"] = httpRequest.UserHostAddress;
+            parameters["UserAgent"] = httpRequest.UserAgent;
+          
+            // Looking for AppPool Identity in order to assist with configuration.
+            var appPoolIdentity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            parameters["UserID"] = appPoolIdentity != null ? appPoolIdentity.Name : "Unknown --your config needs fixing";
+
+            var instance = Hub.Instance.GetInstance(id);
+            var deployment = instance.CreateDeployment(parameters);
+            if (!deployment.IsAllowed(HttpContext))
+            {
+                throw new HttpException(403, "Not Allowed");
+            }
+            deployment.Dry = dry;
+            deployment.ExecuteAsync();
+            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
         }
 
         // POST /deployment/smoketest/instance-name
@@ -55,14 +82,14 @@ namespace GitDeployHub.Web.Controllers
             parameters["UserID"] = appPoolIdentity != null ? appPoolIdentity.Name : "Unknown --your config needs fixing";
 
 
-         var instance = Hub.Instance.GetInstance(id);
+            var instance = Hub.Instance.GetInstance(id);
             var smokeTest = instance.CreateSmokeTest(parameters);
             if (!smokeTest.IsAllowed(HttpContext))
             {
                 throw new HttpException(403, "Not Allowed");
             }
             smokeTest.ExecuteAsync();
-            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : Content("Successfully smoke tested");
+            return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
         }
     }
 }

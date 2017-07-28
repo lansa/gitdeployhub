@@ -88,10 +88,10 @@
                             @Html.ActionLink("ChangeLog", "ChangeLog", "Instance", new { id = instance.Name }, new { title = "ChangeLog of currently deployed version"})
                         </td>
                         <td>
-                            <form method="POST" action="@Url.Action("Start", "Deployment", new { id = instance.Name, source = "dashboard", dry = true })">
+                            <form method="POST" action="@Url.Action("Manual", "Deployment", new { id = instance.Name, source = "dashboard", dry = true })">
                                 <input type="submit" value="Update Preview" />
                             </form>
-                            <form method="POST" action="@Url.Action("Start", "Deployment", new { id = instance.Name, source = "dashboard" })">
+                            <form method="POST" action="@Url.Action("Manual", "Deployment", new { id = instance.Name, source = "dashboard" })">
                                 <input type="submit" value="Deploy Now" />
                             </form>
                             @if (instance.HasSmokeTest && !(instance.LastDeployment != null && !instance.LastDeployment.Succeeded))
@@ -192,6 +192,7 @@
 
     <h2>Instructions</h2>
     <div class="instructions">
+      N.B. The 3 buttons Update Preview, Deploy Now and Smoke Test may only be executed in a browser running on the target machine itself unless the gitDeployHub allowedAddresses setting has the browser's address added<br /> <br /> 
 
             1. Clone your website or install your application environment using an MSI:
         <pre><code>
