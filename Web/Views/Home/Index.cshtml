@@ -196,8 +196,10 @@
 
             1. Clone your website or install your application environment using an MSI:
         <pre><code>
-    cd c:\InetPub\wwwrooot
-    git clone &lt;url&gt; MyWebSite
+    cd c:\InetPub
+    mkdir wwwroot_git
+    cd wwwroot_git
+    git clone git@github.com:lansa/gitdeployhub.git
 </code></pre>
             <p class="indented">(and publish it on IIS)</p>
             2. In your web.config file in C:\inetpub\wwwroot\gitdeployhub\Web:
