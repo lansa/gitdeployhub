@@ -50,7 +50,7 @@ if ( $ASPNET45 -eq $null ) {
 # Create a new web site in c:\inetpub\wwwroot_git and set the port number to 8090.
 $WebSiteName = 'TestSite'
 Get-ChildItem iis:\Sites | Where-Object{$_.Name -eq $WebSiteName}
-New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:8095:"} -physicalPath $WebSiteRootPath -Force 
+New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:8090:"} -physicalPath $WebSiteRootPath -Force 
 
 # Create an App Pool
 
