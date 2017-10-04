@@ -194,37 +194,47 @@
     <div class="instructions">
       N.B. The 3 buttons Update Preview, Deploy Now and Smoke Test may only be executed in a browser running on the target machine itself unless the gitDeployHub allowedAddresses setting has the browser's address added<br /> <br /> 
 
-            1. Clone your website or install your application environment using an MSI:
+      1. Install your LANSA application environment using an MSI or Clone your website path like this:
         <pre><code>
     cd c:\InetPub
     mkdir wwwroot_git
     cd wwwroot_git
     git clone git@github.com:lansa/gitdeployhub.git
 </code></pre>
-            <p class="indented">(and publish it on IIS)</p>
-            2. In your web.config file in C:\inetpub\wwwroot\gitdeployhub\Web:
-        <pre><code>
+      2. Publish the web site using the install.ps1 script from an adminstrative command prompt:
+       <pre><code>
+    cd c:\InetPub\gitdeployhub\install
+    powershell -ExecutionPolicy Bypass .\install.ps1
+</code></pre>
+          
+      3. Configure the target system using the config.ps1 script from an adminstrative command prompt:
+<pre><code>
+    cd c:\InetPub\gitdeployhub\install
+    powershell -ExecutionPolicy Bypass .\config.ps1 -TargetSystem 'MyWebsite' -Folder 'c:\InetPub\wwwroot\Path\To\MyWebsite' -APPL 'DEMO'
+</code></pre>
+       <p class="indented">Or Add the target system to the web.config file in C:\inetpub\wwwroot\gitdeployhub\Web.:</p>
+          <pre><code>
     &lt;!-- allow deployments to be requested from localhost, and from github webhook servers --&gt;
     &lt;gitDeployHub allowedAddresses="192.30.252.*;185.199.108.*;127.0.0.1;::1"&gt;
         &lt;instances&gt;
             &lt;!-- folder is optional if location is ~\..\..\&lt;name&gt; --&gt;
-            &lt;instance name="MyWebsite" folder="c:\InetPub\wwwroot\Path\To\MyWebsite" projectFolder="subfolder of folder where project-specific scripts may be placed"/&gt;
+            &lt;instance name="MyWebsite" folder="c:\InetPub\wwwroot\Path\To\MyWebsite" projectFolder="subfolder of &lt;folder&gt; where project-specific scripts may be placed"/&gt;
             &lt;instance name="LANSA example" folder="C:\Program Files (x86)\LANSA\1-Click Deployment" projectFolder="X_Win95\X_Lansa\X_Apps\DEMO"/&gt;
         &lt;/instances&gt;
     &lt;/gitDeployHub&gt;
 </code></pre>
-            3. Setup your hook to send an http POST to:<br />
-            <pre>
+          4. Setup your hook to send an http POST to:<br />
+          <pre>
     /api/deployments/instance-name?source=source-name
 </pre>
-            <p class="indented">For example, if you want to pull from a github repo go to Settings / Service Hooks / WebHook URLs,<br />
+<p class="indented">For example, if you want to pull from a github repo go to Settings / Service Hooks / WebHook URLs,<br />
             and add:</p>
             <pre>
     @Url.Action("Start", "Deployment", new { id = "MyWebsite", source = "github" }, "http")
 </pre>
             <p class="indented">(you can use query parameters to keep track of the request source)</p>
 
-            4. Script configuration<br />
+            5. Script configuration<br />
            <p class="indented">Scripts are located firstly in the <code>&lt;folder&gt;\&lt;project&gt;\autodeploy</code> folder<br /> 
            and then in the <code>&lt;folder&gt;\autodeploy</code> folder<br /><br />
        
@@ -234,7 +244,7 @@
                   SmokeTest.ps1<br /></code>
            Note that there was a treeish configuration option for setting the git branch to use. Now the git branch is presumed to be the current branch. If it needs to be otherwise, change the branch in predeploy.ps1</p>
 
-            5. Ready! (Push and refresh this page until you see the deployment result)<br />
+            6. Ready! (Push and refresh this page until you see the deployment result)<br />
            <p class="indented">Log messages may also be found in deployments.log in root of web site</p>
     </div>
 
