@@ -417,8 +417,8 @@ namespace GitDeployHub.Web.Engine
             ExecuteProcess(command, arguments, log);
         }
 
-        public void ExecuteScriptIfExists(string fileName, string command, string arguments, ILog log)
-        {
+        public void ExecuteScriptIfExists(string fileName, ILog log)
+      {
             var commonFilename = fileName;
 
             // Execute a project-specific script, if it exists
@@ -426,33 +426,33 @@ namespace GitDeployHub.Web.Engine
             if (HasFile(projectFileName))
             {
                log.Log("Project-specific script file");
-               ExecuteProcess("powershell", projectFileName, log);
+               ExecuteProcess("powershell", "-executionPolicy Bypass " + projectFileName, log);
             }
             else
             {
                 log.Log(string.Format("({0} not present)", projectFileName));
 
                 // Execute a common script, if it exists
-                ExecuteIfExists(commonFilename, "powershell", commonFilename, log);
+                ExecuteIfExists(commonFilename, "powershell", "-executionPolicy Bypass " + commonFilename, log);
             }            
         }
 
         public void ExecutePreDeploy(ILog log)
         {
             var filename = "autodeploy\\PreDeploy.ps1";
-            ExecuteScriptIfExists(filename, "powershell", filename, log);
+            ExecuteScriptIfExists(filename, log);
         }            
 
         public void ExecutePostDeploy(ILog log)
         {
             var fileName = "autodeploy\\PostDeploy.ps1";
-            ExecuteScriptIfExists(fileName, "powershell", fileName, log);
+            ExecuteScriptIfExists(fileName, log);
         }
 
         public void ExecuteSmokeTest(ILog log)
         {
             var fileName = "autodeploy\\SmokeTest.ps1";
-            ExecuteScriptIfExists(fileName, "powershell", fileName, log);
+            ExecuteScriptIfExists(fileName, log);
         }
 
         internal void Log(string message, BaseProcess process)
