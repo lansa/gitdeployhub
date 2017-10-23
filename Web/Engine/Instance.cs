@@ -13,6 +13,8 @@ namespace GitDeployHub.Web.Engine
 {
     public class Instance
     {
+        private static string _runScript = "-executionPolicy Bypass \".\\autodeploy\\RunScriptAsAdmin.ps1";
+
         public string Name { get; private set; }
 
         public string Folder { get; set; }
@@ -284,8 +286,9 @@ namespace GitDeployHub.Web.Engine
                     WorkingDirectory = Folder,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    Verb = "RunAs"
+            };
             if (EnvironmentVariables != null)
             {
                 foreach (var envVar in EnvironmentVariables)
@@ -426,14 +429,14 @@ namespace GitDeployHub.Web.Engine
             if (HasFile(projectFileName))
             {
                log.Log("Project-specific script file");
-               ExecuteProcess("powershell", "-executionPolicy Bypass " + projectFileName, log);
+               ExecuteProcess("powershell", _runScript + " '" + Path.Combine(Folder, projectFileName) + "'\"", log);
             }
             else
             {
                 log.Log(string.Format("({0} not present)", projectFileName));
 
                 // Execute a common script, if it exists
-                ExecuteIfExists(commonFilename, "powershell", "-executionPolicy Bypass " + commonFilename, log);
+                ExecuteIfExists(commonFilename, "powershell", _runScript + " '" + Path.Combine(Folder, commonFilename) + "'\"", log);
             }            
         }
 
