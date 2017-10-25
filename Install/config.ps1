@@ -95,6 +95,7 @@ try {
     Write-Output("Final ExitCode $ExitCode")
     cmd /c exit $ExitCode    #Set $LASTEXITCODE
     Write-Output("Final LASTEXITCODE $LASTEXITCODE")
+    Write-Output("**************************")
     return    
 } finally {
     Write-Output("$(Log-Date)")
@@ -102,3 +103,4 @@ try {
 Write-Output("Configuration succeeded")
 cmd /c exit 0    #Set $LASTEXITCODE
 Write-Output("LASTEXITCODE $LASTEXITCODE")
+Write-Output("**************************")

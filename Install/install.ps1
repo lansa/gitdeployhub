@@ -23,13 +23,13 @@ powershell.exe -ExecutionPolicy Bypass .\install.ps1 -WebSiteName 'testgit' -Web
 #>
 
 param (
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$true)]
         [string]
         $WebSiteName,
-
-    [Parameter(Mandatory=$false)]
+        
+    [Parameter(Mandatory=$true)]
         [string]
-        $WebSitePort = 8090 
+        $WebSitePort
 )
 
 function Log-Date 
@@ -82,26 +82,29 @@ try {
     $HubSite = Get-ChildItem iis:\Sites | Where-Object{$_.Name -eq $WebSiteName}
     $HubSite
     if ( $HubSite -eq $null) {
-        New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force 
+        $HubSite = New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force 
 
         # Create an App Pool
 
         $AppPool = Get-ChildItem iis:\AppPools | Where-Object{$_.Name -eq $WebSiteName}
         if ( $AppPool -eq $null ) {
-            new-item iis:\AppPools\$WebSiteName
+            $AppPool = new-item iis:\AppPools\$WebSiteName
         }
 
         # Set the App Pool user to LocalSystem. Advanced Settings\Identity:
         # So that Git Deploy Hub has permission to use the ssh file
-        #$AppPool.processModel.identityType = "LocalSystem"
-        #$AppPool | set-Item
+        # And web site may be stopped.
+        # And web processes may be stopped
+        # etc
+        $AppPool.processModel.identityType = "LocalSystem"
+        $AppPool | set-Item
 
         # Associate website with App Pool
         Set-ItemProperty IIS:\Sites\$WebSiteName -name applicationPool -value $WebSiteName
     } 
 
     Write-Output ("Create a hub application in $WebSiteName web site")
-    New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $HubSite.applicationPool -Force
+    New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force
 
     # Set the default git environment to be the currently logged on user so that the same SSH key is used for system processes.
     # Set the HOME environment SYSTEM variable to the current users home directory:
@@ -136,6 +139,7 @@ try {
     Write-Output("Final ExitCode $ExitCode")
     cmd /c exit $ExitCode    #Set $LASTEXITCODE
     Write-Output("Final LASTEXITCODE $LASTEXITCODE")
+    Write-Output("**************************")
     return    
 } finally {
     Write-Output("$(Log-Date)")
@@ -143,3 +147,4 @@ try {
 Write-Output("Installation succeeded")
 cmd /c exit 0    #Set $LASTEXITCODE
 Write-Output("LASTEXITCODE $LASTEXITCODE")
+Write-Output("**************************")

@@ -22,7 +22,7 @@ powershell.exe -ExecutionPolicy Bypass .\uninstall.ps1 -WebSiteName 'testgit'
 #>
 
 param (
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory=$true)]
         [string]
         $WebSiteName
 )
@@ -77,13 +77,11 @@ try {
         Write-Output ("Delete a hub application in $WebSiteName web site")
         Remove-WebApplication -Name "Hub" -Site $WebSiteName
         
-        if ( $IsDefault ) {
-            # Delete the web site in c:\inetpub\wwwroot_git
-            $HubSite = Get-ChildItem iis:\Sites | Where-Object{$_.Name -eq $WebSiteName}
-            if ( $HubSite -ne $null ) {
-                Remove-Item $HubSite
-            }
-        }
+        # Delete the web site
+        Remove-Website $WebSiteName
+
+        # Remove App Pool
+        Remove-WebAppPool -Name $WebSiteName        
     } else {
         Write-Output("Warning: web site does not exist")
     }
@@ -108,6 +106,7 @@ try {
     Write-Output("Final ExitCode $ExitCode")
     cmd /c exit $ExitCode    #Set $LASTEXITCODE
     Write-Output("Final LASTEXITCODE $LASTEXITCODE")
+    Write-Output("**************************")
     return    
 } finally {
     Write-Output("$(Log-Date)")
@@ -115,3 +114,4 @@ try {
 Write-Output("Uninstallation succeeded")
 cmd /c exit 0    #Set $LASTEXITCODE
 Write-Output("LASTEXITCODE $LASTEXITCODE")
+Write-Output("**************************")
