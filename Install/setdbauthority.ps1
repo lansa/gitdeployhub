@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
 
-Make LocalSystem owner of the database so that tables may be created when deploying a target system
+Make LocalSystem owner of the database so that tables may be created when deploying a target system.
+Also make LocalSystem able to create logins which is part of creating a table - the schema is a login
 
 This script is running as Administrator
 
@@ -40,7 +41,8 @@ cmd /c exit 0   #Set $LASTEXITCODE
 
         $LoginName = 'NT AUTHORITY\SYSTEM'
         $rolename = 'db_owner'
-
+        $svrolename = 'securityadmin'
+        
         [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SMO')
         $srv = New-Object ('Microsoft.SqlServer.Management.Smo.Server') $DbServerName
         if ( $srv -eq $null) {
@@ -48,15 +50,23 @@ cmd /c exit 0   #Set $LASTEXITCODE
             throw
         }
 
+        $svrole = $srv.Roles | where {$_.Name -eq $svrolename}
+        $svrole = $srv.Roles[ $svrolename ]
+        if ( $svrole -eq $null) {
+            Write-Error("Server Role $svrolename not in database server $DbServerName")
+            throw
+        }
+        $svrole.AddMember( $LoginName )
+
         $db = $srv.Databases | where { $_.Name -eq $dbname }
         if ( $db -eq $null) {
-            Write-Error("Database $dbname not in database server")
+            Write-Error("Database $dbname not in database server $DbServerName")
             throw
         }
 
         $login = $Srv.Logins[ $LoginName ]
         if ( $login -eq $null) {
-            Write-Error("Login $LoginName not in database")
+            Write-Error("Login $LoginName not in database $dbname")
             throw
         }
 
@@ -74,12 +84,12 @@ cmd /c exit 0   #Set $LASTEXITCODE
                 $usr.Create()
             }
         } else {
-            Write-Output("User already exists in database")
+            Write-Output("User $LoginName already exists in database $dbname")
         }
 
         # Once we have a valid user in the database, check to see if the user is already a member of the role.  
         if ($usr -ne $null -and $usr.IsMember($rolename) -eq $True) {
-            Write-Output("User already has role $rolename in database")
+            Write-Output("User already has role $rolename in database $dbname")
             return
         }
 
@@ -87,7 +97,7 @@ cmd /c exit 0   #Set $LASTEXITCODE
         $Role = $DB.Roles[$RoleName]
         if ($Role -eq $null) #Check to see if the role already exists in the database
         {
-            Write-Error("Role $rolename not in database")
+            Write-Error("Role $rolename not in database $dbname")
             throw
         }      
         $Role.AddMember( $LoginName )
