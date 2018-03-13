@@ -82,28 +82,32 @@ try {
     $HubSite = Get-ChildItem iis:\Sites | Where-Object{$_.Name -eq $WebSiteName}
     $HubSite
     if ( $HubSite -eq $null) {
+        Write-Output( "Create web site")
         $HubSite = New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force 
+    }
 
-        # Create an App Pool
+    Write-Output( "Does AppPool $WebSiteName exist?")
+    $AppPool = Get-ChildItem iis:\AppPools | Where-Object{$_.Name -eq $WebSiteName}
+    if ( $AppPool -eq $null ) {
+        Write-Output( "No, create an App Pool")
+        $AppPool = new-item iis:\AppPools\$WebSiteName
+    }
 
-        $AppPool = Get-ChildItem iis:\AppPools | Where-Object{$_.Name -eq $WebSiteName}
-        if ( $AppPool -eq $null ) {
-            $AppPool = new-item iis:\AppPools\$WebSiteName
-        }
+    # Set the App Pool user to LocalSystem. Advanced Settings\Identity:
+    # So that Git Deploy Hub has permission to use the ssh file
+    # And web site may be stopped.
+    # And web processes may be stopped
+    # etc
+    $AppPool.processModel.identityType = "LocalSystem"
+    $AppPool | set-Item
 
-        # Set the App Pool user to LocalSystem. Advanced Settings\Identity:
-        # So that Git Deploy Hub has permission to use the ssh file
-        # And web site may be stopped.
-        # And web processes may be stopped
-        # etc
-        $AppPool.processModel.identityType = "LocalSystem"
-        $AppPool | set-Item
+    # Associate website with App Pool
+    Set-ItemProperty IIS:\Sites\$WebSiteName -name applicationPool -value $WebSiteName
 
-        # Associate website with App Pool
-        Set-ItemProperty IIS:\Sites\$WebSiteName -name applicationPool -value $WebSiteName
-    } 
+    Write-Output("Application Pool...")
+    $AppPool
 
-    Write-Output ("Create a hub application in $WebSiteName web site")
+    Write-Output ("Create a hub application in $WebSiteName web site, path $WebSiteRootPath, Pool $($AppPool.name)")
     New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force
 
     # Set the default git environment to be the currently logged on user so that the same SSH key is used for system processes.
