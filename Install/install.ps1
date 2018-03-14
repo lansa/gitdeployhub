@@ -110,10 +110,22 @@ try {
     Write-Output ("Create a hub application in $WebSiteName web site, path $WebSiteRootPath, Pool $($AppPool.name)")
     New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force
 
+    Write-Output("Web Application created")
+    
     # Set the default git environment to be the currently logged on user so that the same SSH key is used for system processes.
     # Set the HOME environment SYSTEM variable to the current users home directory:
-
-    $HOME2 = Join-Path $ENV:HOMEDRIVE $ENV:HOMEPATH
+    if ( -not (test-path $ENV:HOMEDRIVE) -or (-not (test-path $ENV:HOMEPATH))) {
+        Write-Output ("HOMEDRIVE $ENV:HOMEDRIVE or HOMEPATH $ENV:HOMEPATH does not exist. Use administrator instead")
+        if ( -not (test-path 'c:\users\administrator')) {
+            Write-Output ("No home directory can be derived")
+            throw
+        } else {
+            $HOME2 = 'c:\users\administrator'
+        }
+                   
+    } else {
+        $HOME2 = Join-Path $ENV:HOMEDRIVE $ENV:HOMEPATH
+    }
     Write-Output ("Home environment $HOME2")
     [Environment]::SetEnvironmentVariable('HOME', $HOME2 , 'Machine')
 
