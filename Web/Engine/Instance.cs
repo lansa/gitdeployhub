@@ -334,6 +334,7 @@ namespace GitDeployHub.Web.Engine
             {
                 ExecuteProcess("git", "fetch --tags", log);
             }
+            ExecuteProcess("git", "checkout -f master", log); // do this in case the setup of the repo failed due to security not yet installed
             ExecuteProcess("git", "status -uno", log);
             FolderChanged();
         }
