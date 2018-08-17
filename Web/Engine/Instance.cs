@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Web;
 using GitDeployHub.Web.Engine.Notifiers;
 using GitDeployHub.Web.Engine.Processes;
+using Microsoft.Win32;
 
 namespace GitDeployHub.Web.Engine
 {
@@ -334,7 +335,6 @@ namespace GitDeployHub.Web.Engine
             {
                 ExecuteProcess("git", "fetch --tags", log);
             }
-            ExecuteProcess("git", "checkout -f master", log); // do this in case the setup of the repo failed due to security not yet installed
             ExecuteProcess("git", "status -uno", log);
             FolderChanged();
         }
@@ -372,9 +372,11 @@ namespace GitDeployHub.Web.Engine
         // Clear out any changes in the working directory so that the pull will always succeed
         public void ResetHard(ILog log)
         {
+            log.Log(string.Format("new changes"));
+
             if (ProjectFolder.Length != 0)
             {
-               ExecuteProcess("git", "clean -fd -- " + ProjectFolder + "\\", log); // Ensure there are no changes from the initial install in the project folder
+                ExecuteProcess("git", "clean -fd -- " + ProjectFolder + "\\", log); // Ensure there are no changes from the initial install in the project folder
             }
 
             // Must fetch the origin here so we can reset to the origin!
@@ -383,7 +385,34 @@ namespace GitDeployHub.Web.Engine
             // Set all changes back to the origin's HEAD. Ensures that a force push to the origin also resets this repo to the exact same state
             // The git rev-parse obtains the current upstream as in refs/remotes/origin/master, if its the master branch.
             // Then the current branch is reset to the upstream branch
-            ExecuteProcess("powershell", " $result = git rev-parse --symbolic-full-name '@{upstream}';$result; &'git' reset --hard $result", log);   
+            // If an error occurs then a checkout is performed on the presumption there was a timing issue when installing the environment and the checkout
+            // did not complete successfully. The checkout is not performed before that so that the branch may be changed on the fly easily.
+            var program = "powershell";
+            var block = 
+                "cmd /c exit 0;" +
+                "$result = git rev-parse --symbolic-full-name '@{upstream}';" +
+                "if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE };" + 
+                "$result;" +
+                "&'git' reset --hard $result;" +
+                "if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; ";
+            try
+            {
+                ExecuteProcess(program, block, log);
+            }
+            catch
+            {
+                log.Log("Error fetching changes. Checkout branch first and then retry");
+
+                // Get branch name. Use registry, key else default to master
+                string valueName = "GitBranch" + this.Name;
+                string branch = (string)Registry.GetValue("HKEY_LOCAL_MACHINE\\Software\\lansa", valueName, "master");
+
+                log.Log(valueName + " value is " + branch);
+
+                ExecuteProcess("git", "checkout -f " + branch, log); // do this in case the setup of the repo failed due to security not yet installed
+                ExecuteProcess(program, block, log);
+            }
+
             FolderChanged();
         }
 
