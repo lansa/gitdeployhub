@@ -75,7 +75,7 @@ try {
         }
         $Instance.SetAttribute("folder",$folder) | Write-Host
         $Instance.SetAttribute("projectFolder", "X_Win95\X_Lansa\X_Apps\$APPL") | Write-Host
-        $Instance.SetAttribute("Treeish", $Treeish) | Write-Host
+        $Instance.SetAttribute("treeish", $Treeish) | Write-Host
         $Instance | Write-Host
     } else {
         if ( $Instance -eq $null ) {
