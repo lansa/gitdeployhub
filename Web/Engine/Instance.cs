@@ -442,7 +442,12 @@ namespace GitDeployHub.Web.Engine
         public void ExecuteScriptIfExists(string fileName, ILog log)
       {
             var commonFilename = fileName;
-            var powershellPath = Path.Combine( Environment.GetEnvironmentVariable("SystemRoot"), "sysnative\\WindowsPowershell\\v1.0\\powershell.exe" );
+            var powershellPath = "powershell";
+
+            if ( !Environment.Is64BitProcess )
+            {
+                powershellPath = Path.Combine(Environment.GetEnvironmentVariable("SystemRoot"), "sysnative\\WindowsPowershell\\v1.0\\powershell.exe");
+            }
 
             // Execute a project-specific script, if it exists
             var projectFileName = Path.Combine(ProjectFolder, commonFilename);
