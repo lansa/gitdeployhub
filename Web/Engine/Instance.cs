@@ -370,7 +370,7 @@ namespace GitDeployHub.Web.Engine
         }
 
         // Clear out any changes in the working directory so that the pull will always succeed
-        public void ResetHard(ILog log)
+        public void ResetHard(ILog log, bool ignoreErrors = false)
         {
             log.Log(string.Format("new changes"));
 
@@ -383,8 +383,6 @@ namespace GitDeployHub.Web.Engine
             Fetch(log);
 
             // Set all changes back to the origin's HEAD. Ensures that a force push to the origin also resets this repo to the exact same state
-            // If an error occurs then a checkout is performed on the presumption there was a timing issue when installing the environment and the checkout
-            // did not complete successfully. The checkout is not performed before that so that the branch may be changed on the fly easily.
             // Also ensures that the current branch is set correctly - after reset --hard so that no complaints about merge conflicts and the like.
             var program = "powershell";
             var block = 
@@ -393,18 +391,21 @@ namespace GitDeployHub.Web.Engine
                 ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; " +
                 "&'git' checkout -f " + Treeish +
                 ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; ";
-            try
+            if ( ignoreErrors )
+            {
+                try
+                {
+                    ExecuteProcess(program, block, log);
+                }
+                catch
+                {
+                    log.Log("WARNING: Error resetting. Probably due to locked files. Continuing");
+                }
+            }
+            else
             {
                 ExecuteProcess(program, block, log);
             }
-            catch
-            {
-                log.Log("Error fetching changes. Checkout branch first and then retry");
-
-                ExecuteProcess("git", "checkout -f " + Treeish, log); // do this in case the setup of the repo failed due to security not yet installed
-                ExecuteProcess(program, block, log);
-            }
-
             FolderChanged();
         }
 

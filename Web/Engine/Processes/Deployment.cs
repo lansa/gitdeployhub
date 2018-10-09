@@ -21,6 +21,8 @@ namespace GitDeployHub.Web.Engine.Processes
             // processing, and is a special case anyway, as this task will usually be caused by a commit to origin
             if (!Dry)
             {
+               Instance.ResetHard(this, true);   // Attempt to get the latest changes in order to update predeploy.ps1 BEFORE running it, and there may be errors due to locked files. Ignore them.
+
                Instance.ExecutePreDeploy(this);
                Instance.ResetHard(this);         // Clean out all local changes from the directory, there should be none and the 1st install via MSI leaves files in the Package Directory, of course
                // Instance.Pull(this);           // Not required as reset to origin's state which is same as a pull
