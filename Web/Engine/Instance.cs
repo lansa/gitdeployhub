@@ -383,18 +383,16 @@ namespace GitDeployHub.Web.Engine
             Fetch(log);
 
             // Set all changes back to the origin's HEAD. Ensures that a force push to the origin also resets this repo to the exact same state
-            // The git rev-parse obtains the current upstream as in refs/remotes/origin/master, if its the master branch.
-            // Then the current branch is reset to the upstream branch
             // If an error occurs then a checkout is performed on the presumption there was a timing issue when installing the environment and the checkout
             // did not complete successfully. The checkout is not performed before that so that the branch may be changed on the fly easily.
+            // Also ensures that the current branch is set correctly - after reset --hard so that no complaints about merge conflicts and the like.
             var program = "powershell";
             var block = 
                 "cmd /c exit 0;" +
-                "$result = git rev-parse --symbolic-full-name '@{upstream}';" +
-                "if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE };" + 
-                "$result;" +
-                "&'git' reset --hard $result;" +
-                "if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; ";
+                "&'git' reset --hard origin/" + Treeish +
+                ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; " +
+                "&'git' checkout -f " + Treeish +
+                ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; ";
             try
             {
                 ExecuteProcess(program, block, log);
@@ -403,13 +401,7 @@ namespace GitDeployHub.Web.Engine
             {
                 log.Log("Error fetching changes. Checkout branch first and then retry");
 
-                // Get branch name. Use registry, key else default to master
-                string valueName = "GitBranch" + this.Name;
-                string branch = (string)Registry.GetValue("HKEY_LOCAL_MACHINE\\Software\\lansa", valueName, "master");
-
-                log.Log(valueName + " value is " + branch);
-
-                ExecuteProcess("git", "checkout -f " + branch, log); // do this in case the setup of the repo failed due to security not yet installed
+                ExecuteProcess("git", "checkout -f " + Treeish, log); // do this in case the setup of the repo failed due to security not yet installed
                 ExecuteProcess(program, block, log);
             }
 
@@ -450,20 +442,21 @@ namespace GitDeployHub.Web.Engine
         public void ExecuteScriptIfExists(string fileName, ILog log)
       {
             var commonFilename = fileName;
+            var powershellPath = Path.Combine( Environment.GetEnvironmentVariable("SystemRoot"), "sysnative\\WindowsPowershell\\v1.0\\powershell.exe" );
 
             // Execute a project-specific script, if it exists
             var projectFileName = Path.Combine(ProjectFolder, commonFilename);
             if (HasFile(projectFileName))
             {
                log.Log("Project-specific script file");
-               ExecuteProcess("powershell", "-executionPolicy Bypass " + projectFileName, log);
+               ExecuteProcess(powershellPath, "-executionPolicy Bypass " + projectFileName, log);
             }
             else
             {
                 log.Log(string.Format("({0} not present)", projectFileName));
 
                 // Execute a common script, if it exists
-                ExecuteIfExists(commonFilename, "powershell", "-executionPolicy Bypass " + commonFilename, log);
+                ExecuteIfExists(commonFilename, powershellPath, "-executionPolicy Bypass " + commonFilename, log);
             }            
         }
 
