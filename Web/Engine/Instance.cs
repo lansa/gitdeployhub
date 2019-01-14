@@ -330,10 +330,10 @@ namespace GitDeployHub.Web.Engine
 
         public void Fetch(ILog log, bool fetchTags = true)
         {
-            ExecuteProcess("git", "fetch", log);
+            ExecuteProcess("git", "fetch --force", log);
             if (fetchTags)
             {
-                ExecuteProcess("git", "fetch --tags", log);
+                ExecuteProcess("git", "fetch --tags --force", log);
             }
             ExecuteProcess("git", "status -uno", log);
             FolderChanged();
