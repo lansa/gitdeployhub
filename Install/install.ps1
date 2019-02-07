@@ -121,7 +121,7 @@ try {
         mkdir $SysHomeDir
     }
     # Full access to Everyone, especially for creating/updating known_hosts
-    cmd /C icacls $SysHomeDir /grant:r Everyone:(CI)(OI)(F)  /inheritance:e
+    cmd /C "icacls $SysHomeDir /grant:r Everyone:(CI)(OI)(F)  /inheritance:e"
 
     # Quotes around the WHOLE cmd string so that the output is in ASCII not UTF-16
     cmd /C "Ssh-keyscan github.com >> $SysHomeDir\known_hosts"
