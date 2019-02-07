@@ -26,13 +26,13 @@ param (
     [Parameter(Mandatory=$true)]
         [string]
         $WebSiteName,
-        
+
     [Parameter(Mandatory=$true)]
         [string]
         $WebSitePort
 )
 
-function Log-Date 
+function Log-Date
 {
     ((get-date).ToUniversalTime()).ToString("yyyy-MM-dd HH:mm:ssZ")
 }
@@ -53,7 +53,7 @@ try {
 
     Write-Output ("WebSiteName: $WebSiteName")
     Write-Output ("WebSitePort: $WebSitePort")
-    
+
     # Default install location is c:\inetpub\wwwroot_git
     # LANSA Path is c:\program files(x86)\mycompany\myapp\tools
     # If its the default path, call the website 'git'
@@ -83,7 +83,7 @@ try {
     $HubSite
     if ( $HubSite -eq $null) {
         Write-Output( "Create web site")
-        $HubSite = New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force 
+        $HubSite = New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force
     }
 
     Write-Output( "Does AppPool $WebSiteName exist?")
@@ -111,52 +111,51 @@ try {
     New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force
 
     Write-Output("Web Application created")
-    
-    # Set the default git environment to be the currently logged on user so that the same SSH key is used for system processes.
-    # Set the HOME environment SYSTEM variable to the current users home directory:
-    if ( -not (test-path ENV:HOMEDRIVE) -or (-not (test-path ENV:HOMEPATH))) {
-        Write-Output ("HOMEDRIVE $ENV:HOMEDRIVE or HOMEPATH $ENV:HOMEPATH does not exist. Use administrator instead")
-        if ( -not (test-path 'c:\users\administrator')) {
-            Write-Output ("No home directory can be derived")
-            throw
-        } else {
-            $HOME2 = 'c:\users\administrator'
-        }
-                   
-    } else {
-        $HOME2 = Join-Path $ENV:HOMEDRIVE $ENV:HOMEPATH
+
+    # *************************************************************************
+    Write-Host( "Setup git ssh key permissions")
+    # Firstly ensure the systemprofile .ssh directory exists. It should already contain the ssh key.
+    # If it doesn't then there will be an error anyway
+    $SysHomeDir = 'C:\windows\System32\config\systemprofile\.ssh'
+    if ( -not (Test-Path $SysHomeDir) ) {
+        mkdir $SysHomeDir
     }
-    Write-Output ("Home environment $HOME2")
-    [Environment]::SetEnvironmentVariable('HOME', $HOME2 , 'Machine')
+    # Full access to Everyone, especially for creating/updating known_hosts
+    cmd /C icacls $SysHomeDir /grant:r Everyone:(CI)(OI)(F)  /inheritance:e
+
+    # Quotes around the WHOLE cmd string so that the output is in ASCII not UTF-16
+    cmd /C "Ssh-keyscan github.com >> $SysHomeDir\known_hosts"
+
+    # *************************************************************************
 
     # Start web site provided iis server is running
     $iis = get-wmiobject Win32_Service -Filter "name='w3svc'"
-    if ( $iis -ne $null -and $iis.state -eq 'Running') {
+    if ( $null -ne $iis -and $iis.state -eq 'Running') {
         Start-Website -name $WebSiteName
     }
 } catch {
     $e = $_.Exception
     $e|format-list -force
-    
+
     Write-Output("Installation failed")
-    Write-Output("Raw LASTEXITCODE $LASTEXITCODE")  
+    Write-Output("Raw LASTEXITCODE $LASTEXITCODE")
     if ( (-not [string]::IsNullOrWhiteSpace($LASTEXITCODE)) -and ($LASTEXITCODE -ne 0)) {
         $ExitCode = $LASTEXITCODE
-        Write-Output("ExitCode set to LASTEXITCODE $ExitCode")        
+        Write-Output("ExitCode set to LASTEXITCODE $ExitCode")
     } else {
         $ExitCode =  $e.HResult
-        Write-Output("ExitCode set to HResult $ExitCode")        
+        Write-Output("ExitCode set to HResult $ExitCode")
     }
 
     if ( $ExitCode -eq $null -or $ExitCode -eq 0 ) {
         $ExitCode = -1
-        Write-Output("ExitCode set to $ExitCode")        
+        Write-Output("ExitCode set to $ExitCode")
     }
     Write-Output("Final ExitCode $ExitCode")
     cmd /c exit $ExitCode    #Set $LASTEXITCODE
     Write-Output("Final LASTEXITCODE $LASTEXITCODE")
     Write-Output("**************************")
-    return    
+    return
 } finally {
     Write-Output("$(Log-Date)")
 }
