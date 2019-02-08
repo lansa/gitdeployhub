@@ -42,17 +42,17 @@ cmd /c exit 0    #Set $LASTEXITCODE
 try {
     #Requires -RunAsAdministrator
 
-    Import-Module WebAdministration
+    Import-Module WebAdministration | Out-Default | Write-Host
 
-    $MyInvocation.MyCommand.Path
+    $MyInvocation.MyCommand.Path | Out-Default | Write-Host
     $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
     $GitRepoRoot = Split-Path -Parent $ScriptDir
     $WebSiteRootPath = Join-Path $GitRepoRoot 'web'
 
-    Write-Output("$(Log-Date)")
+    Write-Host("$(Log-Date)")
 
-    Write-Output ("WebSiteName: $WebSiteName")
-    Write-Output ("WebSitePort: $WebSitePort")
+    Write-Host ("WebSiteName: $WebSiteName")
+    Write-Host ("WebSitePort: $WebSitePort")
 
     # Default install location is c:\inetpub\wwwroot_git
     # LANSA Path is c:\program files(x86)\mycompany\myapp\tools
@@ -68,28 +68,28 @@ try {
         }
     }
 
-    Write-Output ("Web Site Name = $WebSiteName")
+    Write-Host ("Web Site Name = $WebSiteName")
 
     # Add the IIS feature ASP 4.x.
     $ASPNET45 = Get-WindowsOptionalFeature -Online | Where-Object {$_.state -eq "Enabled" -and $_.FeatureName -eq 'IIS-ASPNET45'}
-    if ( $ASPNET45 -eq $null ) {
-        Write-Output("Enabling ASP.NET 4.5")
-        Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
-        Write-Output("Finished enabling ASP.NET 4.5")
+    if ( $null -eq $ASPNET45 ) {
+        Write-Host("Enabling ASP.NET 4.5")
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 | Out-Default | Write-Host
+        Write-Host("Finished enabling ASP.NET 4.5")
     }
 
     # Create a new web site in c:\inetpub\wwwroot_git and set the port number to 8090.
     $HubSite = Get-ChildItem iis:\Sites | Where-Object{$_.Name -eq $WebSiteName}
-    $HubSite
-    if ( $HubSite -eq $null) {
-        Write-Output( "Create web site")
+    $HubSite | Out-Default | Write-Host
+    if ( $null -eq $HubSite ) {
+        Write-Host( "Create web site")
         $HubSite = New-Item iis:\Sites\$WebSiteName -bindings @{protocol="http";bindingInformation="*:$($WebSitePort):"} -physicalPath $WebSiteRootPath -Force
     }
 
-    Write-Output( "Does AppPool $WebSiteName exist?")
+    Write-Host( "Does AppPool $WebSiteName exist?")
     $AppPool = Get-ChildItem iis:\AppPools | Where-Object{$_.Name -eq $WebSiteName}
-    if ( $AppPool -eq $null ) {
-        Write-Output( "No, create an App Pool")
+    if ( $null -eq $AppPool ) {
+        Write-Host( "No, create an App Pool")
         $AppPool = new-item iis:\AppPools\$WebSiteName
     }
 
@@ -99,18 +99,18 @@ try {
     # And web processes may be stopped
     # etc
     $AppPool.processModel.identityType = "LocalSystem"
-    $AppPool | set-Item
+    $AppPool | set-Item | Out-Default | Write-Host
 
     # Associate website with App Pool
     Set-ItemProperty IIS:\Sites\$WebSiteName -name applicationPool -value $WebSiteName
 
-    Write-Output("Application Pool...")
-    $AppPool
+    Write-Host("Application Pool...")
+    $AppPool | Out-Default | Write-Host
 
-    Write-Output ("Create a hub application in $WebSiteName web site, path $WebSiteRootPath, Pool $($AppPool.name)")
-    New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force
+    Write-Host ("Create a hub application in $WebSiteName web site, path $WebSiteRootPath, Pool $($AppPool.name)")
+    New-WebApplication -Name "Hub" -Site $WebSiteName -PhysicalPath $WebSiteRootPath -ApplicationPool $AppPool.name -Force | Out-Default | Write-Host
 
-    Write-Output("Web Application created")
+    Write-Host("Web Application created")
 
     # *************************************************************************
     Write-Host( "Setup git ssh key permissions")
@@ -118,48 +118,103 @@ try {
     # If it doesn't then there will be an error anyway
     $SysHomeDir = 'C:\windows\System32\config\systemprofile\.ssh'
     if ( -not (Test-Path $SysHomeDir) ) {
-        mkdir $SysHomeDir
+        mkdir $SysHomeDir | Out-Default | Write-Host
     }
-    # Full access to Everyone, especially for creating/updating known_hosts
-    cmd /C "icacls $SysHomeDir /grant:r Everyone:(CI)(OI)(F)  /inheritance:e"
+    dir $SysHomeDir\..
 
-    # Quotes around the WHOLE cmd string so that the output is in ASCII not UTF-16
-    cmd /C "Ssh-keyscan github.com >> $SysHomeDir\known_hosts"
+    # Full access to Everyone, especially for creating/updating known_hosts
+    cmd /C "icacls `"$SysHomeDir`" /grant:r Everyone:(CI)(OI)(F)  /inheritance:e"
+
+    $RunKeyScanGit = $false
+    $RunKeyScanInPath = $false
+    if ( -not (Get-Command "ssh-keyscan.exe" -ErrorAction SilentlyContinue ) ) {
+        $gitcmd = Get-Command git
+        if ( $gitcmd ) {
+            $gitpath = "$($gitcmd.Source)\..\.."
+        } else {
+            $gitpath = 'c:\program files\git'
+            if ( -not (Test-Path $gitpath) ) {
+                $gitpath = 'c:\program files (x86)\git'
+                if ( -not (Test-Path $gitpath) ) {
+                    $gitpath = 'c:\git'
+                    if ( -not (Test-Path $gitpath) ) {
+                        $gitpath = $null
+                    }
+                }
+            }
+        }
+
+        if ($gitpath) {
+            if ( Test-Path $Gitpath\usr\bin\ssh-keyscan.exe) {
+                $RunKeyScanGit = $true
+            } else {
+                if ( -not ([string]::IsNullOrWhiteSpace($ENV:ChocolateyInstall) ) ) {
+                    Write-Host("Re-install git to add back in ssh-keyscan.exe which was deleted from AWS Scalable image as it failed the AWS virus scan")
+                    choco install git --force
+                    if ( Test-Path "$Gitpath\usr\bin\ssh-keyscan.exe") {
+                        $RunKeyScanGit = $true
+                    }
+                }
+            }
+        }
+    } else {
+        $RunKeyScanInPath = $true
+    }
+
+    if ( $RunKeyScanGit ) {
+        # Quotes around the WHOLE cmd string so that the output is in ASCII not UTF-16
+        cmd /C "`"$Gitpath\usr\bin\ssh-keyscan.exe`" github.com >> `"$SysHomeDir\known_hosts`""
+        if ( $LASTEXITCODE -ne 0) {
+            throw "Error creating $SysHomeDir\known_hosts"
+        }
+    }
+
+    if ( $RunKeyScanInPath ) {
+        # Quotes around the WHOLE cmd string so that the output is in ASCII not UTF-16
+        cmd /C "ssh-keyscan.exe github.com >> `"$SysHomeDir\known_hosts`""
+        if ( $LASTEXITCODE -ne 0) {
+            throw "Error creating $SysHomeDir\known_hosts"
+        }
+    }
+
+    if ( -not $RunKeyScanGit -and -not $RunKeyScanInPath ) {
+        Write-Host("Warning: $SysHomeDir\known_hosts not setup as ssh-keyscan.exe is not available")
+    }
 
     # *************************************************************************
 
     # Start web site provided iis server is running
     $iis = get-wmiobject Win32_Service -Filter "name='w3svc'"
     if ( $null -ne $iis -and $iis.state -eq 'Running') {
-        Start-Website -name $WebSiteName
+        Start-Website -name $WebSiteName | Out-Default | Write-Host
     }
 } catch {
     $e = $_.Exception
-    $e|format-list -force
+    $e|format-list -force | Out-Default | Write-Host
 
-    Write-Output("Installation failed")
-    Write-Output("Raw LASTEXITCODE $LASTEXITCODE")
+    Write-Host("Installation failed")
+    Write-Host("Raw LASTEXITCODE $LASTEXITCODE")
     if ( (-not [string]::IsNullOrWhiteSpace($LASTEXITCODE)) -and ($LASTEXITCODE -ne 0)) {
         $ExitCode = $LASTEXITCODE
-        Write-Output("ExitCode set to LASTEXITCODE $ExitCode")
+        Write-Host("ExitCode set to LASTEXITCODE $ExitCode")
     } else {
         $ExitCode =  $e.HResult
-        Write-Output("ExitCode set to HResult $ExitCode")
+        Write-Host("ExitCode set to HResult $ExitCode")
     }
 
-    if ( $ExitCode -eq $null -or $ExitCode -eq 0 ) {
+    if ( $null -eq $ExitCode -or $ExitCode -eq 0 ) {
         $ExitCode = -1
-        Write-Output("ExitCode set to $ExitCode")
+        Write-Host("ExitCode set to $ExitCode")
     }
-    Write-Output("Final ExitCode $ExitCode")
+    Write-Host("Final ExitCode $ExitCode")
     cmd /c exit $ExitCode    #Set $LASTEXITCODE
-    Write-Output("Final LASTEXITCODE $LASTEXITCODE")
-    Write-Output("**************************")
+    Write-Host("Final LASTEXITCODE $LASTEXITCODE")
+    Write-Host("**************************")
     return
 } finally {
-    Write-Output("$(Log-Date)")
+    Write-Host("$(Log-Date)")
 }
-Write-Output("Installation succeeded")
+Write-Host("Installation succeeded")
 cmd /c exit 0    #Set $LASTEXITCODE
-Write-Output("LASTEXITCODE $LASTEXITCODE")
-Write-Output("**************************")
+Write-Host("LASTEXITCODE $LASTEXITCODE")
+Write-Host("**************************")
