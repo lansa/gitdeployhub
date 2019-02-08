@@ -123,7 +123,11 @@ try {
     dir $SysHomeDir\..
 
     # Full access to Everyone, especially for creating/updating known_hosts
-    cmd /C "icacls `"$SysHomeDir`" /grant:r Everyone:(CI)(OI)(F)  /inheritance:e"
+    # cmd /C "icacls `"$SysHomeDir`" /grant:r Everyone:(CI)(OI)(F)  /inheritance:e"
+    $Acl = Get-Acl $SysHomeDir
+    $Ar = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $Acl.SetAccessRule($Ar) | Out-Default | Write-Host
+    Set-Acl $SysHomeDir $Acl | Out-Default | Write-Host
 
     $RunKeyScanGit = $false
     $RunKeyScanInPath = $false
