@@ -375,24 +375,26 @@ namespace GitDeployHub.Web.Engine
 
             var program = "powershell";
             var block = @"
-                cmd /c exit 0;
-                Write-Host ('Saving copy of vlweb.dat to detect if an iisreset is required');
-                Get-Location | Out-Default | Write-Host;
-                $SavedFilePath = ""$ENV:TEMP\vlweb.dat"";
-                Remove-Item -Path $SavedFilePath -ErrorAction SilentlyContinue;
+                Write-Host ('Saving copy of vlweb.dat to detect if an iisreset is required')
+                Get-Location | Out-Default | Write-Host
+                $SavedFilePath = Join-Path $ENV:TEMP 'vlweb.dat'
+                Remove-Item -Path $SavedFilePath -ErrorAction SilentlyContinue
 
-                $VLWebDatFile = '.\x_win95\x_lansa\web\vl\vlweb.dat';
+                $VLWebDatFile = '.\x_win95\x_lansa\web\vl\vlweb.dat'
                 if ( !(Test-Path $VLWebDatFile -PathType Leaf)) {
-                    $VLWebDatFile = '.\x_win64\x_lansa\web\vl\vlweb.dat';
+                    $VLWebDatFile = '.\x_win64\x_lansa\web\vl\vlweb.dat'
                     if ( !(Test-Path $VLWebDatFile -PathType Leaf)) {
-                        Write-Host( ""$VLWebDatFile does not exist"");
-                        return;
+                        $VLWebDatFile | Write-Host
+                        Write-Host( 'does not exist' )
+                        return
                     }
                 }
-                Write-Host( ""$VLWebDatFile contents..."");
-                Get-Content -Path $VLWebDatFile | Out-Default | Write-Host;
-                Write-Host( ""Saved to $ENV:TEMP\vlweb.dat"");
-                Copy-Item -Path $VLWebDatFile -Destination $SavedFilePath -Force | Out-Default | Write-Host;
+                $VLWebDatFile | Write-Host
+                Write-Host( 'contents...')
+                Get-Content -Path $VLWebDatFile | Out-Default | Write-Host
+                Write-Host( 'Saved vlweb.dat to...' )
+                $ENV:TEMP | Write-Host
+                Copy-Item -Path $VLWebDatFile -Destination $SavedFilePath -Force | Out-Default | Write-Host
             ";
 
             ExecuteProcess(program, block, log);
