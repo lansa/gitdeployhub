@@ -369,6 +369,35 @@ namespace GitDeployHub.Web.Engine
             FolderChanged();
         }
 
+        public void SaveAppState( ILog log )
+        {
+            log.Log(string.Format("Save Application state"));
+
+            var program = "powershell";
+            var block = @"
+                cmd /c exit 0;
+                Write-Host ('Saving copy of vlweb.dat to detect if an iisreset is required');
+                Get-Location | Out-Default | Write-Host;
+                $SavedFilePath = ""$ENV:TEMP\vlweb.dat"";
+                Remove-Item -Path $SavedFilePath -ErrorAction SilentlyContinue;
+
+                $VLWebDatFile = '.\x_win95\x_lansa\web\vl\vlweb.dat';
+                if ( !(Test-Path $VLWebDatFile -PathType Leaf)) {
+                    $VLWebDatFile = '.\x_win64\x_lansa\web\vl\vlweb.dat';
+                    if ( !(Test-Path $VLWebDatFile -PathType Leaf)) {
+                        Write-Host( ""$VLWebDatFile does not exist"");
+                        return;
+                    }
+                }
+                Write-Host( ""$VLWebDatFile contents..."");
+                Get-Content -Path $VLWebDatFile | Out-Default | Write-Host;
+                Write-Host( ""Saved to $ENV:TEMP\vlweb.dat"");
+                Copy-Item -Path $VLWebDatFile -Destination $SavedFilePath -Force | Out-Default | Write-Host;
+            ";
+
+            ExecuteProcess(program, block, log);
+        }
+
         // Clear out any changes in the working directory so that the pull will always succeed
         public void ResetHard(ILog log, bool ignoreErrors = false)
         {

@@ -17,10 +17,10 @@ namespace GitDeployHub.Web.Engine.Processes
 
             // Parameters may be referenced here like this: Log("User ID: " + Parameters["UserID"] );
 
-            // Doing a Fetch and a Pull causes 2 connections to the origin to be made. This is far slower than the rest of the 
-            // processing, and is a special case anyway, as this task will usually be caused by a commit to origin
             if (!Dry)
             {
+               Instance.SaveAppState(this);      // Save vlweb.dat
+
                Instance.ResetHard(this, true);   // Attempt to get the latest changes in order to update predeploy.ps1 BEFORE running it, and there may be errors due to locked files. Ignore them.
 
                Instance.ExecutePreDeploy(this);
