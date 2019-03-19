@@ -415,18 +415,12 @@ namespace GitDeployHub.Web.Engine
 
             // Set all changes back to the origin's HEAD. Ensures that a force push to the origin also resets this repo to the exact same state
             // Also ensures that the current branch is set correctly - after reset --hard so that no complaints about merge conflicts and the like.
-            var program = "powershell";
-            var block = 
-                "cmd /c exit 0;" +
-                "&'git' reset --hard origin/" + Treeish +
-                ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; " +
-                "&'git' checkout -f " + Treeish +
-                ";if ($LASTEXITCODE -gt 0 ) { exit $LASTEXITCODE }; ";
             if ( ignoreErrors )
             {
                 try
                 {
-                    ExecuteProcess(program, block, log);
+                    ExecuteProcess("git", "reset --hard origin/" + Treeish, log);
+                    ExecuteProcess("git", "checkout -f " + Treeish, log);
                 }
                 catch
                 {
@@ -435,7 +429,9 @@ namespace GitDeployHub.Web.Engine
             }
             else
             {
-                ExecuteProcess(program, block, log);
+               ExecuteProcess("git", "reset --hard origin/" + Treeish, log);
+               ExecuteProcess("git", "checkout -f " + Treeish, log);
+
             }
             FolderChanged();
         }
