@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Script.Serialization;
+using Microsoft.Win32;
 
 namespace GitDeployHub.Web.Engine.Processes
 {
@@ -187,5 +188,16 @@ namespace GitDeployHub.Web.Engine.Processes
             return allowed;
         }
 
-    }
+      public bool IsAvailable(HttpContextBase context)
+      {
+         bool available = true;
+         int? installing = Registry.GetValue("HKEY_LOCAL_MACHINE\\Software\\LANSA", "Installing", 0) as int?;
+         if ( installing == 1 )
+         {
+            available = false;
+         }
+
+         return available;
+      }
+   }
 }

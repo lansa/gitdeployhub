@@ -33,6 +33,12 @@ namespace GitDeployHub.Web.Controllers
             {
                 throw new HttpException(403, "Not Allowed");
             }
+
+            if (!deployment.IsAvailable(HttpContext))
+            {
+                throw new HttpException(503, "Deployment is temporarily not available");
+            }
+
             deployment.Dry = dry;
             deployment.ExecuteAsync();
             return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : Content("Successfully deployed");
@@ -60,6 +66,12 @@ namespace GitDeployHub.Web.Controllers
             {
                 throw new HttpException(403, "Not Allowed");
             }
+
+            if (!deployment.IsAvailable(HttpContext))
+            {
+                throw new HttpException(503, "Update Preview is temporarily not available");
+            }
+
             deployment.Dry = dry;
             deployment.ExecuteAsync();
             return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
@@ -88,6 +100,12 @@ namespace GitDeployHub.Web.Controllers
             {
                 throw new HttpException(403, "Not Allowed");
             }
+
+            if (!smokeTest.IsAvailable(HttpContext))
+            {
+                throw new HttpException(503, "Smoke Test is temporarily not available");
+            }
+
             smokeTest.ExecuteAsync();
             return Request.IsAjaxRequest() ? (ActionResult)Json("OK") : RedirectToAction("Index", "Home");
         }
