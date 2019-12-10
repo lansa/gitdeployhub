@@ -74,7 +74,7 @@ try {
     $ASPNET45 = Get-WindowsOptionalFeature -Online | Where-Object {$_.state -eq "Enabled" -and $_.FeatureName -eq 'IIS-ASPNET45'}
     if ( $null -eq $ASPNET45 ) {
         Write-Host("Enabling ASP.NET 4.5")
-        Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 | Out-Default | Write-Host
+        Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 -All | Out-Default | Write-Host
         Write-Host("Finished enabling ASP.NET 4.5")
     }
 
@@ -193,10 +193,12 @@ try {
         Start-Website -name $WebSiteName | Out-Default | Write-Host
     }
 } catch {
+    $_ | Out-Default | Write-Host
     $e = $_.Exception
     $e|format-list -force | Out-Default | Write-Host
 
     Write-Host("Installation failed")
+
     Write-Host("Raw LASTEXITCODE $LASTEXITCODE")
     if ( (-not [string]::IsNullOrWhiteSpace($LASTEXITCODE)) -and ($LASTEXITCODE -ne 0)) {
         $ExitCode = $LASTEXITCODE
